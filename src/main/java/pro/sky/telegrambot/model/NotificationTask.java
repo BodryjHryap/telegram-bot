@@ -17,14 +17,13 @@ public class NotificationTask {
     private LocalDateTime notificationDate;
     private String notificationText;
 
-    public NotificationTask() {
-
-    }
-
-    public NotificationTask(Long chatId, LocalDateTime notificationDate, String notificationText) {
+    public NotificationTask(Long chatId, String notificationText, LocalDateTime notificationDate) {
         this.chatId = chatId;
         this.notificationDate = notificationDate;
         this.notificationText = notificationText;
+    }
+
+    public NotificationTask() {
     }
 
     public Long getNotificationId() {
@@ -64,12 +63,12 @@ public class NotificationTask {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NotificationTask that = (NotificationTask) o;
-        return Objects.equals(notificationId, that.notificationId) && Objects.equals(chatId, that.chatId) && Objects.equals(notificationDate, that.notificationDate) && Objects.equals(notificationText, that.notificationText);
+        return Objects.equals(getNotificationId(), that.getNotificationId()) && Objects.equals(getChatId(), that.getChatId()) && Objects.equals(getNotificationDate(), that.getNotificationDate()) && Objects.equals(getNotificationText(), that.getNotificationText());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(notificationId, chatId, notificationDate, notificationText);
+        return Objects.hash(getNotificationId(), getChatId(), getNotificationDate(), getNotificationText());
     }
 
     @Override
