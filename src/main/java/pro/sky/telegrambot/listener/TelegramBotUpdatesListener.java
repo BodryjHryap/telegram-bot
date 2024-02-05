@@ -38,35 +38,49 @@ public class TelegramBotUpdatesListener implements UpdatesListener {
     }
 
     @Override
-    public int process(List<Update> updates) {
+    public int process(List<Update> updates) throws NullPointerException {
         updates.forEach(update -> {
             logger.info("Processing update: {}", update);
             String messageText = "Привет! Хочешь поставить напоминание!? Жду от тебя время и дату и о чем ты хочешь себе напомнить.";
             Long chatId = update.message().chat().id();
-            if (update.message().text().equals("/start")) {
-                SendMessage message = new SendMessage(chatId, messageText);
-                telegramBot.execute(message);
+            if (update.message().text() != null &&update.message().text().equals("/start")) {
+                try {
+                    SendMessage message = new SendMessage(chatId, messageText);
+                    telegramBot.execute(message);
+                } catch (NullPointerException e) {
+                    System.out.println("Сообщение не может быть пустым!");
+                } finally {
+                    System.out.println("Проверка завершена");
+                }
             }
 
-            Pattern pattern = Pattern.compile("([0-9\\.\\:\\s]{16})(\\s)([\\W+]+)");
-            Matcher matcher = pattern.matcher(update.message().text());
-            String date = null;
-            String item = null;
+            try {
+                Pattern pattern = Pattern.compile("([0-9\\.\\:\\s]{16})(\\s)([\\W+]+)");
+                if (update.message().text() != null) {
+                    Matcher matcher = pattern.matcher(update.message().text());
+                    String date = null;
+                    String item = null;
+                    if (matcher.matches()) {
+                        date = matcher.group(1);
+                        item = matcher.group(3);
+                        System.out.println(date);
+                        System.out.println(item);
+                        logger.info("Date: {}, item: {}", date, item);
+                    }
 
-            if (matcher.matches()) {
-                date = matcher.group(1);
-                item = matcher.group(3);
-                System.out.println(date);
-                System.out.println(item);
-                logger.info("Date: {}, item: {}", date, item);
-            }
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+                    if (date != null) {
+                        LocalDateTime dateTime = LocalDateTime.parse(date, formatter);
+                        notificationTaskRepository.save(new NotificationTask(chatId, item, dateTime));
+                        SendMessage message = new SendMessage(chatId, "Я запомнил!");
+                        telegramBot.execute(message);
+                    }
+                }
 
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-            if (date != null) {
-                LocalDateTime dateTime = LocalDateTime.parse(date, formatter);
-                notificationTaskRepository.save(new NotificationTask(chatId, item, dateTime));
-                SendMessage message = new SendMessage(chatId, "Я запомнил!");
-                telegramBot.execute(message);
+            } catch (NullPointerException exception) {
+                System.out.println("Сообщение не может быть пустым!");
+            } finally {
+                System.out.println("Проверка завершена");
             }
         });
         return UpdatesListener.CONFIRMED_UPDATES_ALL;
