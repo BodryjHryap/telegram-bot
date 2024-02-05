@@ -1,28 +1,30 @@
 package pro.sky.telegrambot.scheduler;
 
-import ch.qos.logback.core.util.TimeUtil;
+import com.pengrad.telegrambot.TelegramBot;
+import com.pengrad.telegrambot.request.SendMessage;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import pro.sky.telegrambot.service.NotificationTaskService;
+import pro.sky.telegrambot.repository.NotificationTaskRepository;
 
-import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDateTime;
-import java.time.chrono.ChronoPeriod;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
-import java.util.concurrent.TimeUnit;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Component
 public class Scheduler {
-    private final NotificationTaskService notificationTaskService;
+    private final NotificationTaskRepository notificationTaskRepository;
+    private final TelegramBot telegramBot;
 
-    public Scheduler(NotificationTaskService notificationTaskService) {
-        this.notificationTaskService = notificationTaskService;
+    public Scheduler(NotificationTaskRepository notificationTaskRepository, TelegramBot telegramBot) {
+        this.notificationTaskRepository = notificationTaskRepository;
+        this.telegramBot = telegramBot;
     }
 
     @Scheduled(cron = "0 0/1 * * * *")
-    public void test() {
-        notificationTaskService.sendNotifications(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES));
+    public void sendNotificationTasks() {
+        notificationTaskRepository.findAllByNotificationDate(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))
+                .forEach(notificationTask -> {
+                    SendMessage message = new SendMessage(notificationTask.getChatId(), String.format("Напоминаю, как и обещал: %s", notificationTask.getNotificationText()));
+                    telegramBot.execute(message);
+                });
     }
 }
